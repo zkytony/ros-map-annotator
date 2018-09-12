@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset=utf-8>
+        <title>Outlines & Waypoints creator</title>
+        <script src="https://code.jquery.com/jquery-3.1.0.min.js" integrity="sha256-cCueBR6CsyA4/9szpPfrX3s49M9vUU5BgtiJj06wt/s=" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/3.6.1/js-yaml.min.js"></script>
+    </head>
+    <style>
+     * {
+         padding: 0px;
+         margin: 0px;
+         font-size: 14px;
+         font-family: Arial;
+         color: black;
+     }
+
+     body {
+         background: #fff2e6;
+     }
+
+     #absolute-region {
+         position: fixed;
+         bottom: 0px;
+         right: 0px;
+         width: 430px;
+         min-height: 200px;
+         background-color: #ffe6b3;
+         padding: 5px;
+         box-sizing: border-box;
+         z-index: 10;
+         border: 2px solid #66ccff;
+     }
+
+
+     #door-params {
+       position: absolute;
+       width: 160px;
+       min-height: 160px;
+       background-color: #fcbe50;
+       right: 0px;
+     }
+
+     #door-params form {
+       font-size: 13px;
+       padding: 4px;
+     }
+     #door-params form input[type="number"]{
+       width: 80px;
+       right: 10px;
+       margin-bottom: 3px;
+     }
+
+     #outlines-format-checkbox {
+       padding-top: 20px;
+       width: 100%;
+       font-size: 12px;
+       height: 40px;
+       background-color: #ffe6b3;
+     }
+
+     
+     /* Buttons */
+     #controls {
+     }
+
+     .descp {
+         font-size: 9px;
+     }
+
+     #config-message {
+         font-size: 10px;
+     }
+     #map-config-list {
+         margin-top: 6px;
+         list-style-type: none;
+         margin-bottom: 10px;
+     }
+     #config-display {
+         width: 100%;
+         min-height: 40px;
+     }
+
+     #map-display {
+         /* absolutely show it at (0, 0) */
+         position: absolute;
+         top: 0px;
+         left: 0px;
+         z-index: 2;
+     }
+
+     #map-img-display, #img-canvas {
+         min-width: 0px;
+         min-height: 0px;
+     }
+
+     #img-canvas {
+         position: absolute;
+         top: 0px;
+         left: 0px;
+         z-index: 3;
+     }
+
+     .btn-selected {
+         background: grey;
+         color: white;
+     }
+
+     .btn-green {
+         background: #33cc33;
+         color: white;
+     }
+
+     #ok-btn {
+         width: 70px;
+         background-color: #22FF33;
+     }
+
+     .alert-msg {
+         color: #FF2200;
+     }
+
+     #outline-whole-move-btn {
+         margin-right: 5px;
+     }
+
+     button, input[type="file"] {
+         font-size: 11px;
+     }
+
+     button {
+         min-width: 60px;
+         min-height: 20px;
+     }
+
+     input[type="file"] {
+         width: 100%;
+     }
+
+     #controls #textfields {
+	 float: right;
+	 margin-right: 15px;
+	 margin-top:2px;
+     }
+     input[type="text"].metadata-field {
+         width: 110px;
+	 height: 14px;
+	 font-size: 10px;
+     }
+    </style>
+    <body>
+        <div id="absolute-region">
+	    <div id="door-params">
+	      <form>
+		width: <input type="number" step="0.01" name="door_width" id="door-width" value="0.00" disabled><br>
+                length: <input type="number" step="0.01" name="door_length" id="door-length" value="0.00" disabled><br>
+                wid ext.: <input type="number" step="0.01" name="door_width_ext" id="door-width-ext" value="0.00"><br>
+                len ext.: <input type="number" step="0.01" name="door_length_ext" id="door-length-ext" value="0.00"><br>
+	      </form>
+	      <button id="ol-door-mode">Door Mode</button>
+	      <button id="ol-mass-update-doors">Mass Update</button>
+	      <div id="outlines-format-checkbox">
+		Old labels.json format: <input type="checkbox" id="old-outlines-format"><br/>
+		Save doorway info: <input type="checkbox" id="save-dw-info" checked>
+	      </div>
+	    </div>
+            <div id="map-select-form">
+                <h4>Load files</h4>
+                <form>
+                    Select map image (.jpg): <br><input type="file" name="map_image_file" id="map-img-file-selector"><br>
+                    Select map config (.yaml): <br><input type="file" name="map_config_file" id="map-config-file-selector"><br>
+                    Load waypoints (.json): <br><input type="file" name="map_wyp_file" id="map-wyp-file-selector"><br>
+                    Load existing outlines (.json): <br><input type="file" name="map_ol_file" id="map-ol-file-selector"><br>
+                </form>
+            </div>
+            <div id="map-config">
+                <h4>Configurations</h4>
+                <div id="config-message">No config available.</div>
+                <div id=config-display>
+                    <ul id="map-config-list">
+                    </ul>
+                </div>
+            </div>
+            <div id="controls">
+                <h4>Controls</h4>
+                <button id="outline-btn">Outline</button>
+                <button id="waypoint-btn">Waypoint</button>
+                <button id="outline-whole-move-btn">Move Outline</button>
+                <button id="undo-btn">Undo</button>
+                <button id="ok-btn">OK</button>
+                <button id="export-btn">Export</button>
+		<button id="door-btn" disabled>Door</button>
+		<div id="textfields">
+		  <input type="text" name="room_id" class="metadata-field" id="room_id_field" placeholder="4_2PO_1">
+		</div>
+            </div>
+        </div>
+        <div id="map-display">
+            <img id="map-img-display" src="">
+            <canvas id='img-canvas' width="0" height="0"></canvas>
+        </div>
+        <a id="download-anchor-elem" style="display:none"></a>
+    </body>
+    <script src="cold_webtool.js"></script>
+</html>
