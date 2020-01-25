@@ -362,15 +362,9 @@ $(document).ready(function() {
         }
 
         if (mode === "outline") {
-            // Well, let's just output outline coordinates for now.
-	    // TODO: Generate world description file directly
-	    // Update: I now generate world description file
-	    var world_description = {"rooms": {}};
-	    
-	    // Check if we save doorway information
-	    if ($("#save-dw-info")[0].checked) {
-		world_description["doors"] = allDoors;
-	    }
+            // Outlines specify regions; Each region has a label.
+            // Each region is defined based on a lower-left corner
+	    var world_description = {"regions": {}};
 	    
             // gmapping origin is the gmapping coordinate at the lower-left pixel of the map image.
             // Note that in JS Canvas coordinate system, the origin is at top-left.
@@ -380,61 +374,48 @@ $(document).ready(function() {
                 if (outlines[i].length == 0) {
                     continue;
                 }
-		// edges contains an array of edges (2-element arrays)
-		var edges = [];
-                var pi = outlines[i][0];
-                var gi = [conf['origin'][0] + pi[0]*conf['resolution'],
-                          conf['origin'][1] + (imgHeight - pi[1])*conf['resolution'],
-                          0.0];
 
+                var lower_left = [10000000, 10000000];
+                var upper_right = [-10000000, -10000000];
                 for (var j = 1; j < outlines[i].length; j++) {
                     var pt = outlines[i][j];
                     var gt = [conf['origin'][0] + pt[0]*conf['resolution'],
                               conf['origin'][1] + (imgHeight - pt[1])*conf['resolution'],
                               0.0];
-
-                    // push edge
-                    edges.push([gi, gt]);
-                    gi = gt;
+                    if (gt[0] < lower_left[0] && gt[1] < lower_left[1]) {
+                        lower_left = gt;
+                    }
+                    if (gt[0] > upper_right[0] && gt[1] > upper_right[1]) {
+                        upper_right = gt;
+                    }
                 }
-		var roomId = "undefined";
+		var regionId = "undefined";
 		var lastPointOfCurrentOutline = outlines[i][outlines[i].length-1]
 		if (lastPointOfCurrentOutline.length == 3) {
 		    // The third element stores metadata
-		    roomId = lastPointOfCurrentOutline[2]['roomId']
+		    regionId = lastPointOfCurrentOutline[2]['roomId']
 		}
 
-		// Handle new and old format
-		if ($("#old-outlines-format")[0].checked) {
-		    // old format
-		    world_description['rooms']['room_' + numToStr(i+1, 2)] = {
-			"objects": {},
-			"unique_id": roomId,
-			"outline": edges,
-		    }
-		} else {
-		    // new format
-		    world_description['rooms'][roomId] = {
-			"outline": edges,
-		    }
-		}
+                // Get the region dimension
+                var dimension = parseInt($("#region_dim_field").val());
+                var resolution = Math.max(upper_right[0] - lower_left[0], upper_right[1] - lower_left[1]) / (dimension*1.0);                
+                world_description["regions"][regionId] = {"origin": lower_left,
+                                                          "dimension": dimension,
+                                                          "resolution": resolution}  // search resolution
             }
 	    
 	    dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(world_description));
         } else if (mode === "waypoint") {
-	    // Format: 
-	    // { "loop": true/false,
-	    //   "script": [
-	    //     {
-	    //      "ACTION_TYPE": { ... },
-	    //     },
-	    //     ...
-	    //   ]
+            // TOPOMAP Format: 
+	    // { "nodes": {
+            //        "node_id": {"th": 0, "x": <x>, "y": <y>}
+            //    },
+            //    "edges": {} // filled by user manually
 	    // }
 	    // ACTION_TYPE can be "move", "open_door" (for now).
             var output = {};
-	    output["loop"] = "true";  // Default loop to true. You can change it manually.
-	    output["script"] = [];
+	    output["nodes"] = {};  // Default loop to true. You can change it manually.
+	    output["edges"] = {};
             for (var i = 0; i < waypoints.length; i++) {
 		// compute real world cooridnates
                 var p = waypoints[i];
@@ -442,23 +423,12 @@ $(document).ready(function() {
 		var wy = conf['origin'][1] + (imgHeight - p[1])*conf['resolution'];
 		var wth = 0.0;
 		// Push a new action "move" to move to this location.
-		output["script"].push({
-		    "move": {
+		output["nodes"][i] = {
+		    i: {
 			"th": wth,
 			"x": wx,
 			"y": wy
 		    }
-		})
-		
-		// If this index i is in waypoint_doors, we push another action
-		// "open_door", with an attribute "wait" (sec) for 15 sec. There
-		// should not be two consecutive "open_door" actions.
-		if (i in waypoint_doors) {
-		    output["script"].push({
-			"open_door": {
-			    "wait": 15
-			}
-		    });
 		}
             }
 
