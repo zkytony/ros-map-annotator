@@ -424,11 +424,9 @@ $(document).ready(function() {
 		var wth = 0.0;
 		// Push a new action "move" to move to this location.
 		output["nodes"][i] = {
-		    i: {
-			"th": wth,
-			"x": wx,
-			"y": wy
-		    }
+		    "th": wth,
+		    "x": wx,
+		    "y": wy
 		}
             }
 
