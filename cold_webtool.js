@@ -38,9 +38,9 @@ var currentDoor = [];  // Stores door information (width, length coordinates,
 var allDoors = {};  // mapping from roomID -> door
 
 
-canvas.addEventListener("mousedown", draw, false);
-
 $(document).ready(function() {
+
+    canvas.addEventListener("mousedown", draw, false);
 
     $(document).on("change", "#map-img-file-selector", function() {
         var input = $(this)[0];
