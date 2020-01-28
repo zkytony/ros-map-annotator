@@ -382,12 +382,22 @@ $(document).ready(function() {
                     var gt = [conf['origin'][0] + pt[0]*conf['resolution'],
                               conf['origin'][1] + (imgHeight - pt[1])*conf['resolution'],
                               0.0];
-                    if (gt[0] < lower_left[0] && gt[1] < lower_left[1]) {
-                        lower_left = gt;
+
+                    if (gt[0] < lower_left[0]) {
+                        lower_left[0] = gt[0];
                     }
-                    if (gt[0] > upper_right[0] && gt[1] > upper_right[1]) {
-                        upper_right = gt;
+                    if (gt[1] < lower_left[1]) {
+                        lower_left[1] = gt[1];
                     }
+                    if (gt[0] > upper_right[0]) {
+                        upper_right[0] = gt[0];
+                    }
+                    if (gt[1] > upper_right[1]) {
+                        upper_right[1] = gt[1];
+                    }
+                    console.log(gt)
+                    console.log("lower left" + lower_left)
+                    console.log("upper right" + upper_right)                    
                 }
 		var regionId = "undefined";
 		var lastPointOfCurrentOutline = outlines[i][outlines[i].length-1]
